@@ -1,6 +1,9 @@
 using Persistence;
 using Microsoft.EntityFrameworkCore;
 
+
+var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,9 +12,24 @@ builder.Services.AddDbContext<DataContext>(options =>
         options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
     });
 
-
+/*
+builder.Services.AddCors(options => {
+    options.AddPolicy("CorsPolicy", policy => {
+        policy.AllowAnyMethod().AllowAnyHeader().WithOrigins();
+    });
+});
+*/
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      builder =>
+                      {
+                          builder.WithOrigins("http://localhost:3000",
+                                              "https://localhost:3000");
+                      });
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -30,6 +48,8 @@ using (var scope = app.Services.CreateScope())
     await Seed.SeedData(dataContext);
 }
 
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -40,7 +60,12 @@ if (app.Environment.IsDevelopment())
  app.UseSwaggerUI();
 
 
-app.UseHttpsRedirection();
+
+//app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
 
